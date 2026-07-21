@@ -897,10 +897,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     if (submitBtn.disabled) return;
 
     var randomId = Math.floor(100000 + Math.random() * 900000);
-    refIdEl.textContent = 'CVE-2026-' + randomId;
+    var newRefId = 'CVE-2026-' + randomId;
 
-    backdrop.classList.add('is-open');
-    document.body.style.overflow = 'hidden';
+    // The flow now routes through the AI Analysis screen before the
+    // success confirmation, instead of opening the modal directly.
+    CivicEyeShell.navigate('civiceye-ai-analysis.html?ref=' + encodeURIComponent(newRefId));
   });
 
   function closeModal() {
