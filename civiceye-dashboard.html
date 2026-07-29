@@ -421,11 +421,31 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     'complaint-details': { label: 'Complaint Details', href: 'civiceye-complaint-details.html', icon: '' }
   };
 
-  /* Sidebar shows these, in this order (complaint-details is intentionally excluded) */
-  var SIDEBAR_ORDER = ['dashboard', 'officer-hub', 'report-issue', 'my-complaints', 'notifications', 'profile', 'settings'];
+  /* ---------- User Role ---------- */
 
-  var DUMMY_UNREAD_COUNT = 4; // mirrors the seed data on the Notifications page
+var USER_ROLE = "citizen";
 
+var ROLE_SIDEBAR = {
+    citizen: [
+        "dashboard",
+        "report-issue",
+        "my-complaints",
+        "notifications",
+        "profile",
+        "settings"
+    ],
+    officer: [
+        "officer-hub",
+        "notifications",
+        "profile",
+        "settings"
+    ]
+};
+
+/* Sidebar shows these, in this order */
+var SIDEBAR_ORDER = ROLE_SIDEBAR[USER_ROLE] || [];
+
+var DUMMY_UNREAD_COUNT = 4;
   /* ----------------------------------------------------------
      2. DOM BOOTSTRAP HELPERS
   ---------------------------------------------------------- */
@@ -747,6 +767,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
   renderTimeline();
 })();
+</script>
+<script src="js/auth.js"></script>
+
+<script>
+CivicEyeAuth.checkRole("citizen");
 </script>
 </body>
 </html>

@@ -560,14 +560,21 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     });
 
     /* Logout — no real session in this frontend-only build */
-    var logoutBtn = header.querySelector('#ce-shell-logout-btn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', function () {
-        // No auth/backend in this build — dummy action only.
-        closeProfileMenu();
-      });
-    }
-  }
+   /* Logout */
+var logoutBtn = header.querySelector('#ce-shell-logout-btn');
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', function () {
+
+    // Clear stored role
+    sessionStorage.removeItem('ce_role');
+    localStorage.removeItem('ce_role');
+
+    closeProfileMenu();
+
+    // Go back to login page
+    window.location.href = "login.html";
+  });
+}
 
   /* ----------------------------------------------------------
      5. SHARED SIDEBAR

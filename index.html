@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CivicEye — Dashboard</title>
+<title>CivicEye — Login</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -214,537 +214,331 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 </style>
 
 <style>
-  /* ---------- Page-specific styles only ---------- */
-  .ce-ring-value { transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 1100ms cubic-bezier(0.16,1,0.3,1); }
+  /* ==========================================================
+     PAGE-SPECIFIC STYLES — Login page only.
+     Tokens, fade-up, hover-card, cta, ghost-btn, ripple, skeleton,
+     and focus states all come from the shared shell CSS block
+     above — nothing below duplicates them.
+  ========================================================== */
+  body { min-height: 100vh; }
 
-  .ce-timeline-track { position: absolute; left: 13px; top: 4px; bottom: 4px; width: 2px; background: var(--ce-border); }
-  .ce-timeline-item { opacity: 0; transform: translateX(-8px); transition: opacity 420ms ease, transform 420ms cubic-bezier(0.16,1,0.3,1); }
-  .ce-timeline-item.is-visible { opacity: 1; transform: translateX(0); }
+  .ce-login-shell { min-height: 100vh; }
+
+  /* ---------- Glassmorphism card ---------- */
+  .ce-glass-card {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow: 0 20px 60px -20px rgba(15,23,42,0.25);
+  }
+
+  /* ---------- Left branding panel ---------- */
+  .ce-brand-panel {
+    background: linear-gradient(135deg, #0B1220 0%, #132033 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .ce-brand-glow {
+    position: absolute; border-radius: 9999px;
+    background: radial-gradient(circle, rgba(14,159,110,0.35) 0%, rgba(14,159,110,0) 70%);
+    animation: ce-glow-pulse 5s ease-in-out infinite;
+  }
+  @keyframes ce-glow-pulse {
+    0%, 100% { opacity: 0.5; transform: scale(0.95); }
+    50% { opacity: 0.9; transform: scale(1.05); }
+  }
+  .ce-float-icon {
+    position: absolute;
+    animation: ce-float 5s ease-in-out infinite;
+    opacity: 0.35;
+  }
+  @keyframes ce-float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-14px) rotate(5deg); }
+  }
+
+  /* ---------- Role selector (segmented control) ---------- */
+  .ce-role-btn {
+    transition: background-color 220ms ease, color 220ms ease, box-shadow 220ms ease, transform 180ms ease;
+  }
+  .ce-role-btn:active { transform: scale(0.97); }
+  .ce-role-btn[aria-pressed="true"] {
+    background-color: var(--ce-ink);
+    color: white;
+    box-shadow: 0 6px 16px -6px rgba(11,18,32,0.35);
+  }
+
+  /* ---------- Password visibility toggle ---------- */
+  .ce-pw-toggle { transition: color 180ms ease; }
+
+  /* ---------- Form field focus ring reuse ---------- */
+  .ce-input {
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+  }
+  .ce-input:focus {
+    border-color: var(--ce-emerald);
+    box-shadow: 0 0 0 3px rgba(14,159,110,0.12);
+  }
+
+  /* ---------- Custom checkbox (Remember me) ---------- */
+  .ce-checkbox { accent-color: var(--ce-emerald); }
+
+  /* ---------- Error shake ---------- */
+  @keyframes ce-shake {
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-4px); }
+    40%, 60% { transform: translateX(4px); }
+  }
+  .ce-shake { animation: ce-shake 500ms cubic-bezier(0.36,0.07,0.19,0.97) both; }
+
+  /* ---------- Loading spinner inside button ---------- */
+  .ce-btn-spinner {
+    height: 16px; width: 16px; border-radius: 9999px;
+    border: 2px solid rgba(255,255,255,0.4); border-top-color: white;
+    animation: ce-spin 650ms linear infinite;
+  }
+  @keyframes ce-spin { to { transform: rotate(360deg); } }
 </style>
 </head>
-<body>
+<body class="bg-[var(--ce-surface)]">
 
-<!-- Shell mounts: header + sidebar are rendered by assets/shell.js -->
-<div class="lg:flex lg:items-start lg:gap-6 lg:max-w-[1500px] lg:mx-auto lg:px-5 lg:pt-6">
-  <div id="ce-shell-sidebar-mount"></div>
+<div class="ce-login-shell grid lg:grid-cols-2">
 
-  <div class="flex-1 min-w-0">
-    <div id="ce-shell-header-mount"></div>
+  <!-- ===================== LEFT: BRANDING / ILLUSTRATION PANEL ===================== -->
+  <div class="ce-brand-panel hidden lg:flex flex-col justify-between p-12 text-white relative">
+    <div class="ce-brand-glow" style="top:-120px; left:-100px; height:340px; width:340px;"></div>
+    <div class="ce-brand-glow" style="bottom:-140px; right:-80px; height:300px; width:300px; animation-delay:1.5s;"></div>
 
-    <main id="ce-shell-content" class="ce-shell-content max-w-6xl mx-auto px-5 md:px-8 py-7 md:py-9">
-      <div id="ce-shell-breadcrumb-mount"></div>
+    <svg class="ce-float-icon" style="top:14%; right:14%; animation-delay:0s;" width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-6.5 7-11.5A7 7 0 0 0 5 9.5C5 14.5 12 21 12 21Z" stroke="#ECFDF5" stroke-width="1.6"/><circle cx="12" cy="9.5" r="2.2" stroke="#ECFDF5" stroke-width="1.6"/></svg>
+    <svg class="ce-float-icon" style="top:46%; right:6%; animation-delay:1.2s;" width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4h9l5 5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" stroke="#ECFDF5" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    <svg class="ce-float-icon" style="bottom:22%; right:22%; animation-delay:2.4s;" width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 15c3-2 6-2 9 0s6 2 9 0" stroke="#ECFDF5" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="9" r="3" stroke="#ECFDF5" stroke-width="1.6"/></svg>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="relative z-10">
+      <div class="flex items-center gap-2.5">
+        <span class="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M1.5 12C3.7 7.2 7.5 4.7 12 4.7c4.5 0 8.3 2.5 10.5 7.3-2.2 4.8-6 7.3-10.5 7.3-4.5 0-8.3-2.5-10.5-7.3Z" stroke="#ECFDF5" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.1" fill="#0E9F6E"/></svg>
+        </span>
+        <span class="text-[19px] font-extrabold tracking-tight">Civic<span class="text-[var(--ce-emerald)]">Eye</span></span>
+      </div>
+    </div>
 
-        <!-- ===================== MAIN COLUMN ===================== -->
-        <div class="lg:col-span-2 flex flex-col gap-6 min-w-0">
+    <div class="relative z-10 max-w-md">
+      <h1 class="text-[30px] font-extrabold tracking-tight leading-tight mb-3">Your city, working smarter.</h1>
+      <p class="text-[14.5px] text-slate-300 leading-relaxed">Report civic issues, track resolutions, and keep your municipality accountable — all from one premium, AI-assisted platform.</p>
 
-          <!-- ---------- Welcome card ---------- -->
-          <section class="ce-fade-up rounded-2xl p-5 md:p-6 text-white relative overflow-hidden" style="background: linear-gradient(135deg, #0B1220 0%, #132033 100%);">
-            <h1 class="text-[19px] md:text-[22px] font-extrabold tracking-tight">Welcome back, Aditi</h1>
-            <p class="text-[13.5px] text-slate-300 mt-1">Here's what's happening with your reported issues.</p>
+      <div class="flex items-center gap-6 mt-8">
+        <div><p class="text-[22px] font-extrabold">428</p><p class="text-[12px] text-slate-400">Complaints Tracked</p></div>
+        <div><p class="text-[22px] font-extrabold">92%</p><p class="text-[12px] text-slate-400">Citizen Satisfaction</p></div>
+        <div><p class="text-[22px] font-extrabold">1.6d</p><p class="text-[12px] text-slate-400">Avg. Resolution</p></div>
+      </div>
+    </div>
 
-            <button type="button" class="ce-rippleable ce-ripple-light ce-cta inline-flex items-center gap-2 mt-5 h-11 px-5 rounded-full text-[14px] font-semibold text-white" data-ce-href="civiceye-report-issue.html">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>
-              Report a New Issue
-            </button>
-          </section>
+    <p class="relative z-10 text-[12px] text-slate-500">© 2026 CivicEye. A smarter civic platform.</p>
+  </div>
 
-          <!-- ---------- Statistics ---------- -->
-          <section aria-label="Your complaint statistics" class="ce-fade-up grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div class="ce-hover-card rounded-2xl border border-[var(--ce-border)] bg-white p-4">
-              <div class="h-8 w-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center mb-2.5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4h9l5 5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
-              <p class="text-[19px] font-extrabold leading-none">14</p>
-              <p class="text-[11px] text-[var(--ce-ink-soft)] mt-1">Total Complaints</p>
-            </div>
-            <div class="ce-hover-card rounded-2xl border border-[var(--ce-border)] bg-white p-4">
-              <div class="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2.5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12.5l5 5L20 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              <p class="text-[19px] font-extrabold leading-none">9</p>
-              <p class="text-[11px] text-[var(--ce-ink-soft)] mt-1">Resolved</p>
-            </div>
-            <div class="ce-hover-card rounded-2xl border border-[var(--ce-border)] bg-white p-4">
-              <div class="h-8 w-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-2.5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
-              <p class="text-[19px] font-extrabold leading-none">2</p>
-              <p class="text-[11px] text-[var(--ce-ink-soft)] mt-1">Pending</p>
-            </div>
-            <div class="ce-hover-card rounded-2xl border border-[var(--ce-border)] bg-white p-4">
-              <div class="h-8 w-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center mb-2.5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12a8 8 0 1 1 3 6.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 12v5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-              <p class="text-[19px] font-extrabold leading-none">3</p>
-              <p class="text-[11px] text-[var(--ce-ink-soft)] mt-1">In Progress</p>
-            </div>
-          </section>
+  <!-- ===================== RIGHT: LOGIN FORM ===================== -->
+  <div class="flex items-center justify-center p-6 sm:p-10">
+    <div class="ce-fade-up w-full max-w-sm">
 
-          <!-- ---------- Recent complaints preview ---------- -->
-          <section class="ce-fade-up" aria-labelledby="ce-recent-heading">
-            <div class="flex items-center justify-between mb-3">
-              <h2 id="ce-recent-heading" class="text-[15px] font-bold text-[var(--ce-ink)]">Recent Complaints</h2>
-              <button type="button" class="text-[12.5px] font-semibold text-[var(--ce-emerald)]" data-ce-href="civiceye-my-complaints.html">View all →</button>
-            </div>
+      <!-- Mobile-only logo (branding panel is hidden below lg) -->
+      <div class="flex lg:hidden items-center justify-center gap-2.5 mb-8">
+        <span class="h-10 w-10 rounded-xl bg-[var(--ce-ink)] flex items-center justify-center">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M1.5 12C3.7 7.2 7.5 4.7 12 4.7c4.5 0 8.3 2.5 10.5 7.3-2.2 4.8-6 7.3-10.5 7.3-4.5 0-8.3-2.5-10.5-7.3Z" stroke="#ECFDF5" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.1" fill="#0E9F6E"/></svg>
+        </span>
+        <span class="text-[18px] font-extrabold tracking-tight text-[var(--ce-ink)]">Civic<span class="text-[var(--ce-emerald)]">Eye</span></span>
+      </div>
 
-            <div class="flex flex-col gap-3">
-              <button type="button" class="ce-hover-card w-full text-left rounded-2xl border border-[var(--ce-border)] bg-white p-4 flex items-center gap-4" data-ce-href="civiceye-complaint-details.html?id=CE-10231">
-                <span class="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 bg-orange-50 text-orange-600">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 15c3-2 6-2 9 0s6 2 9 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="9" r="3" stroke="currentColor" stroke-width="2"/></svg>
-                </span>
-                <span class="flex-1 min-w-0">
-                  <span class="block text-[13.5px] font-semibold text-[var(--ce-ink)] truncate">Pothole near MG Road, Sector 14</span>
-                  <span class="block text-[12px] text-slate-400 font-mono mt-0.5">CE-10231</span>
-                </span>
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold border bg-purple-50 text-purple-700 border-purple-200 shrink-0"><span class="h-1.5 w-1.5 rounded-full bg-purple-500"></span>In Progress</span>
-              </button>
+      <div class="ce-glass-card lg:bg-white lg:backdrop-blur-none lg:border-[var(--ce-border)] rounded-2xl p-6 sm:p-8">
+        <h2 class="text-[21px] font-extrabold tracking-tight text-[var(--ce-ink)] mb-1">Welcome Back</h2>
+        <p class="text-[13px] text-[var(--ce-ink-soft)] mb-6">Sign in to continue to CivicEye.</p>
 
-              <button type="button" class="ce-hover-card w-full text-left rounded-2xl border border-[var(--ce-border)] bg-white p-4 flex items-center gap-4" data-ce-href="civiceye-complaint-details.html?id=CE-10219">
-                <span class="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 bg-sky-50 text-sky-600">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 1 1-12 0c0-4.5 6-11 6-11Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                </span>
-                <span class="flex-1 min-w-0">
-                  <span class="block text-[13.5px] font-semibold text-[var(--ce-ink)] truncate">Water leakage, Ashoka Nagar</span>
-                  <span class="block text-[12px] text-slate-400 font-mono mt-0.5">CE-10219</span>
-                </span>
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200 shrink-0"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Resolved</span>
-              </button>
-
-              <button type="button" class="ce-hover-card w-full text-left rounded-2xl border border-[var(--ce-border)] bg-white p-4 flex items-center gap-4" data-ce-href="civiceye-complaint-details.html?id=CE-10214">
-                <span class="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 bg-cyan-50 text-cyan-600">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 6l1 13h14l1-13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </span>
-                <span class="flex-1 min-w-0">
-                  <span class="block text-[13.5px] font-semibold text-[var(--ce-ink)] truncate">Blocked drainage, Rajiv Nagar</span>
-                  <span class="block text-[12px] text-slate-400 font-mono mt-0.5">CE-10214</span>
-                </span>
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold border bg-amber-50 text-amber-700 border-amber-200 shrink-0"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Pending</span>
-              </button>
-            </div>
-          </section>
-
+        <!-- Role selector -->
+        <div role="radiogroup" aria-label="Select your role" class="grid grid-cols-3 gap-2 mb-5">
+          <button type="button" class="ce-role-btn ce-rippleable rounded-xl border border-[var(--ce-border)] bg-white py-2.5 text-[12.5px] font-semibold text-[var(--ce-ink)]" data-role="citizen" role="radio" aria-checked="true" aria-pressed="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="mx-auto mb-1"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Citizen
+          </button>
+          <button type="button" class="ce-role-btn ce-rippleable rounded-xl border border-[var(--ce-border)] bg-white py-2.5 text-[12.5px] font-semibold text-[var(--ce-ink)]" data-role="officer" role="radio" aria-checked="false" aria-pressed="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="mx-auto mb-1"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+            Officer
+          </button>
+          <button type="button" class="ce-role-btn ce-rippleable rounded-xl border border-[var(--ce-border)] bg-white py-2.5 text-[12.5px] font-semibold text-[var(--ce-ink)]" data-role="admin" role="radio" aria-checked="false" aria-pressed="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="mx-auto mb-1"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 13.5a7.9 7.9 0 0 0 0-3l2-1.6-2-3.4-2.4.8a7.9 7.9 0 0 0-2.6-1.5L14 2h-4l-.4 2.8a7.9 7.9 0 0 0-2.6 1.5l-2.4-.8-2 3.4 2 1.6a7.9 7.9 0 0 0 0 3l-2 1.6 2 3.4 2.4-.8a7.9 7.9 0 0 0 2.6 1.5L10 22h4l.4-2.8a7.9 7.9 0 0 0 2.6-1.5l2.4.8 2-3.4-2-1.6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            Admin
+          </button>
         </div>
 
-        <!-- ===================== SIDEBAR ===================== -->
-        <aside class="flex flex-col gap-6" aria-label="Quick actions, notifications, and activity">
+        <form id="ce-login-form" novalidate>
+          <label for="ce-email" class="block text-[12.5px] font-medium text-slate-500 mb-1.5">Email</label>
+          <input id="ce-email" type="email" autocomplete="username" placeholder="you@civiceye.gov" class="ce-input w-full h-11 px-3.5 rounded-xl border border-[var(--ce-border)] text-[14px] mb-1 focus:outline-none" />
+          <p id="ce-email-error" class="text-[11.5px] text-red-600 mb-3 hidden" role="alert">Please enter a valid email address.</p>
 
-          <!-- ---------- Quick actions ---------- -->
-          <section class="ce-fade-up rounded-2xl border border-[var(--ce-border)] bg-white p-5" aria-labelledby="ce-quick-actions-heading">
-            <h2 id="ce-quick-actions-heading" class="text-[15px] font-bold text-[var(--ce-ink)] mb-4">Quick Actions</h2>
-            <div class="grid grid-cols-2 gap-2.5">
-              <button type="button" class="ce-rippleable ce-ripple-light ce-cta col-span-2 flex items-center justify-center gap-2 rounded-xl text-white text-[12.5px] font-semibold py-3" data-ce-href="civiceye-report-issue.html">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>
-                Report New Issue
-              </button>
-              <button type="button" class="ce-rippleable ce-ghost-btn flex flex-col items-center justify-center gap-1.5 rounded-xl border border-[var(--ce-border)] bg-white text-[var(--ce-ink)] text-[12px] font-semibold py-3" data-ce-href="civiceye-my-complaints.html">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4h9l5 5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                My Complaints
-              </button>
-              <button type="button" class="ce-rippleable ce-ghost-btn flex flex-col items-center justify-center gap-1.5 rounded-xl border border-[var(--ce-border)] bg-white text-[var(--ce-ink)] text-[12px] font-semibold py-3" data-ce-href="civiceye-notifications.html">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-                Notifications
-              </button>
-              <button type="button" class="ce-rippleable ce-ghost-btn flex flex-col items-center justify-center gap-1.5 rounded-xl border border-[var(--ce-border)] bg-white text-[var(--ce-ink)] text-[12px] font-semibold py-3" data-ce-href="civiceye-profile.html">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                Profile
-              </button>
-              <button type="button" class="ce-rippleable ce-ghost-btn flex flex-col items-center justify-center gap-1.5 rounded-xl border border-[var(--ce-border)] bg-white text-[var(--ce-ink)] text-[12px] font-semibold py-3" data-ce-href="civiceye-settings.html">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 13.5a7.9 7.9 0 0 0 0-3l2-1.6-2-3.4-2.4.8a7.9 7.9 0 0 0-2.6-1.5L14 2h-4l-.4 2.8a7.9 7.9 0 0 0-2.6 1.5l-2.4-.8-2 3.4 2 1.6a7.9 7.9 0 0 0 0 3l-2 1.6 2 3.4 2.4-.8a7.9 7.9 0 0 0 2.6 1.5L10 22h4l.4-2.8a7.9 7.9 0 0 0 2.6-1.5l2.4.8 2-3.4-2-1.6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-                Settings
-              </button>
-            </div>
-          </section>
+          <label for="ce-password" class="block text-[12.5px] font-medium text-slate-500 mb-1.5 mt-3">Password</label>
+          <div class="relative">
+            <input id="ce-password" type="password" autocomplete="current-password" placeholder="••••••••" class="ce-input w-full h-11 px-3.5 pr-11 rounded-xl border border-[var(--ce-border)] text-[14px] focus:outline-none" />
+            <button type="button" id="ce-toggle-password" aria-label="Show password" aria-pressed="false" class="ce-pw-toggle absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[var(--ce-ink)]">
+              <svg id="ce-eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M1.5 12C3.7 7.2 7.5 4.7 12 4.7c4.5 0 8.3 2.5 10.5 7.3-2.2 4.8-6 7.3-10.5 7.3-4.5 0-8.3-2.5-10.5-7.3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/></svg>
+            </button>
+          </div>
+          <p id="ce-password-error" class="text-[11.5px] text-red-600 mt-1.5 hidden" role="alert">Password must be at least 6 characters.</p>
 
-          <!-- ---------- Notifications preview ---------- -->
-          <section class="ce-fade-up rounded-2xl border border-[var(--ce-border)] bg-white p-5" aria-labelledby="ce-notif-preview-heading">
-            <div class="flex items-center justify-between mb-3.5">
-              <h2 id="ce-notif-preview-heading" class="text-[15px] font-bold text-[var(--ce-ink)]">Notifications</h2>
-              <button type="button" class="text-[12px] font-semibold text-[var(--ce-emerald)]" data-ce-href="civiceye-notifications.html">View all →</button>
-            </div>
-            <div class="flex flex-col divide-y divide-[var(--ce-border)]">
-              <button type="button" class="w-full text-left py-2.5" data-ce-href="civiceye-complaint-details.html?id=CE-10231">
-                <p class="text-[13px] font-semibold text-[var(--ce-ink)]">Officer Started Work</p>
-                <p class="text-[12px] text-slate-400 mt-0.5">CE-10231 · 1 hr ago</p>
-              </button>
-              <button type="button" class="w-full text-left py-2.5" data-ce-href="civiceye-complaint-details.html?id=CE-10219">
-                <p class="text-[13px] font-semibold text-[var(--ce-ink)]">Complaint Resolved</p>
-                <p class="text-[12px] text-slate-400 mt-0.5">CE-10219 · Yesterday</p>
-              </button>
-            </div>
-          </section>
+          <div class="flex items-center justify-between mt-4 mb-6">
+            <label class="flex items-center gap-2 text-[12.5px] text-[var(--ce-ink-soft)] font-medium">
+              <input type="checkbox" class="ce-checkbox h-4 w-4 rounded border-[var(--ce-border)]" />
+              Remember me
+            </label>
+            <button type="button" id="ce-forgot-btn" class="text-[12.5px] font-semibold text-[var(--ce-emerald)]">Forgot Password?</button>
+          </div>
 
-          <!-- ---------- Recent activity ---------- -->
-          <section class="ce-fade-up rounded-2xl border border-[var(--ce-border)] bg-white p-5" aria-labelledby="ce-activity-heading">
-            <h2 id="ce-activity-heading" class="text-[15px] font-bold text-[var(--ce-ink)] mb-5">Recent Activity</h2>
-            <div id="ce-activity-timeline" class="relative pl-1.5" role="list" aria-label="Recent activity, newest first">
-              <div class="ce-timeline-track"></div>
-            </div>
-          </section>
+          <button type="submit" id="ce-login-btn" class="ce-cta ce-rippleable ce-ripple-light w-full h-12 rounded-full text-white text-[14.5px] font-semibold inline-flex items-center justify-center gap-2">
+            <span id="ce-login-btn-label">Log In as <span id="ce-login-role-label">Citizen</span></span>
+          </button>
+        </form>
 
-        </aside>
+        <p id="ce-forgot-note" class="text-[12px] text-slate-400 mt-4 text-center opacity-0 transition-opacity duration-300">Password reset isn't available in this demo — contact your municipal admin.</p>
       </div>
-    </main>
+
+      <p class="text-[12px] text-slate-400 text-center mt-6">This is a frontend simulation — no real accounts or authentication are involved.</p>
+    </div>
   </div>
 </div>
 
 <!-- ============================================================
-     SHELL BOOTSTRAP — shared header, sidebar, breadcrumb, transitions
+     JAVASCRIPT — role selection, validation, dummy login flow
 ============================================================= -->
+<script src="js/auth.js"></script>
 <script>
-  /* ============================================================
-     SHARED SHELL JS — inlined so this file works standalone in
-     any preview or hosting environment. Canonical source:
-     assets/shell.js in the full project.
-  ============================================================ */
-/* ==============================================================
-   CivicEye — Shared App Shell (JavaScript)
-   One reusable navigation system for every citizen-module page.
-   Each page calls CivicEyeShell.init({ activeKey, breadcrumb })
-   in a small bootstrap <script> right after <body> opens.
-============================================================== */
 (function () {
   'use strict';
 
-  /* ----------------------------------------------------------
-     1. SITE MAP — single source of truth for nav + routing
-  ---------------------------------------------------------- */
-  var PAGES = {
-    dashboard:     { label: 'Dashboard',     href: 'civiceye-dashboard.html',
-      icon: '<rect x="3" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/>' },
-    'report-issue':{ label: 'Report Issue',  href: 'civiceye-report-issue.html',
-      icon: '<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' },
-    'my-complaints': { label: 'My Complaints', href: 'civiceye-my-complaints.html',
-      icon: '<path d="M6 4h9l5 5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>' },
-    notifications: { label: 'Notifications', href: 'civiceye-notifications.html',
-      icon: '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 0 1-3.4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' },
-    profile:       { label: 'Profile',       href: 'civiceye-profile.html',
-      icon: '<circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' },
-    settings:      { label: 'Settings',      href: 'civiceye-settings.html',
-      icon: '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 13.5a7.9 7.9 0 0 0 0-3l2-1.6-2-3.4-2.4.8a7.9 7.9 0 0 0-2.6-1.5L14 2h-4l-.4 2.8a7.9 7.9 0 0 0-2.6 1.5l-2.4-.8-2 3.4 2 1.6a7.9 7.9 0 0 0 0 3l-2 1.6 2 3.4 2.4-.8a7.9 7.9 0 0 0 2.6 1.5L10 22h4l.4-2.8a7.9 7.9 0 0 0 2.6-1.5l2.4.8 2-3.4-2-1.6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>' },
-    /* Reachable but not a primary sidebar item — it's a detail/child page */
-    'complaint-details': { label: 'Complaint Details', href: 'civiceye-complaint-details.html', icon: '' }
+  var ROLE_REDIRECTS = {
+    citizen: 'civiceye-dashboard.html',
+    officer: 'civiceye-officer-dashboard.html',
+    admin: 'civiceye-admin-dashboard.html'
   };
+  var ROLE_LABELS = { citizen: 'Citizen', officer: 'Officer', admin: 'Admin' };
 
-  /* Sidebar shows these, in this order (complaint-details is intentionally excluded) */
-  var SIDEBAR_ORDER = ['dashboard', 'report-issue', 'my-complaints', 'notifications', 'profile', 'settings'];
+  var selectedRole = 'citizen';
+  var roleButtons = Array.prototype.slice.call(document.querySelectorAll('.ce-role-btn'));
+  var roleLabelEl = document.getElementById('ce-login-role-label');
 
-  var DUMMY_UNREAD_COUNT = 4; // mirrors the seed data on the Notifications page
-
-  /* ----------------------------------------------------------
-     2. DOM BOOTSTRAP HELPERS
-  ---------------------------------------------------------- */
-  function el(html) {
-    var wrap = document.createElement('div');
-    wrap.innerHTML = html.trim();
-    return wrap.firstElementChild;
-  }
-
-  /* ----------------------------------------------------------
-     3. PAGE LOADER (shown briefly on arrival, and again on
-        navigation before leaving the page)
-  ---------------------------------------------------------- */
-  function mountLoader() {
-    var existing = document.getElementById('ce-page-loader');
-    if (existing) return existing;
-    var loader = el(
-      '<div id="ce-page-loader" class="ce-page-loader" aria-hidden="true">' +
-        '<div class="flex flex-col items-center gap-3.5">' +
-          '<span class="ce-loader-badge">' +
-            '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
-              '<path d="M1.5 12C3.7 7.2 7.5 4.7 12 4.7c4.5 0 8.3 2.5 10.5 7.3-2.2 4.8-6 7.3-10.5 7.3-4.5 0-8.3-2.5-10.5-7.3Z" stroke="#ECFDF5" stroke-width="1.6" stroke-linejoin="round"/>' +
-              '<circle cx="12" cy="12" r="3.1" fill="#0E9F6E"/>' +
-            '</svg>' +
-          '</span>' +
-          '<span class="text-[12.5px] font-semibold text-[var(--ce-ink-soft)]">Loading…</span>' +
-        '</div>' +
-      '</div>'
-    );
-    document.body.insertBefore(loader, document.body.firstChild);
-    return loader;
-  }
-
-  function hideLoader() {
-    var loader = document.getElementById('ce-page-loader');
-    if (!loader) return;
-    // Small delay so the loader is never a single-frame flash
-    window.setTimeout(function () { loader.classList.add('is-hidden'); }, 220);
-  }
-
-  /* Navigate with a brief loading overlay — the shared "page transition" */
-  function navigate(href) {
-    if (!href) return;
-    var loader = document.getElementById('ce-page-loader');
-    var content = document.getElementById('ce-shell-content');
-    if (content) content.classList.add('is-leaving');
-    if (loader) loader.classList.remove('is-hidden');
-    window.setTimeout(function () { window.location.href = href; }, 260);
-  }
-
-  /* ----------------------------------------------------------
-     4. SHARED HEADER
-  ---------------------------------------------------------- */
-  function renderHeader(activeKey, sidebarMode) {
-    var mount = document.getElementById('ce-shell-header-mount');
-    if (!mount) return;
-    var toggleVisibilityClass = sidebarMode === 'floating' ? '' : 'lg:hidden';
-
-    var header = el(
-      '<header class="ce-shell-header">' +
-        '<div class="max-w-[1400px] mx-auto px-5 md:px-8 h-16 md:h-[68px] flex items-center justify-between gap-3">' +
-
-          '<div class="flex items-center gap-2.5 min-w-0">' +
-            '<button type="button" id="ce-shell-sidebar-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="ce-shell-sidebar" class="ce-ghost-btn ' + toggleVisibilityClass + ' h-10 w-10 shrink-0 rounded-full border border-[var(--ce-border)] bg-white flex items-center justify-center">' +
-              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="#0B1220" stroke-width="2" stroke-linecap="round"/></svg>' +
-            '</button>' +
-            '<button type="button" class="ce-shell-logo-btn flex items-center gap-2 shrink-0" data-ce-href="' + PAGES.dashboard.href + '" aria-label="CivicEye — dashboard">' +
-              '<span class="h-8 w-8 rounded-lg bg-[var(--ce-ink)] flex items-center justify-center">' +
-                '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M1.5 12C3.7 7.2 7.5 4.7 12 4.7c4.5 0 8.3 2.5 10.5 7.3-2.2 4.8-6 7.3-10.5 7.3-4.5 0-8.3-2.5-10.5-7.3Z" stroke="#ECFDF5" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.1" fill="#0E9F6E"/></svg>' +
-              '</span>' +
-              '<span class="hidden sm:block text-[15px] font-extrabold tracking-tight text-[var(--ce-ink)]">Civic<span class="text-[var(--ce-emerald)]">Eye</span></span>' +
-            '</button>' +
-          '</div>' +
-
-          '<div class="hidden md:block flex-1 max-w-xs">' +
-            '<label for="ce-shell-search" class="sr-only">Search complaints</label>' +
-            '<div class="relative">' +
-              '<svg class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="#94A3B8" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="#94A3B8" stroke-width="2" stroke-linecap="round"/></svg>' +
-              '<input id="ce-shell-search" type="search" placeholder="Search complaints…" class="w-full h-9 pl-9 pr-3 rounded-lg border border-[var(--ce-border)] bg-white text-[13px] placeholder:text-slate-400 focus:border-[var(--ce-emerald)] transition-colors" />' +
-            '</div>' +
-          '</div>' +
-
-          '<div class="flex items-center gap-2 shrink-0">' +
-            '<button type="button" class="ce-shell-notif-btn ce-ghost-btn relative h-10 w-10 rounded-full border border-[var(--ce-border)] bg-white flex items-center justify-center" data-ce-href="' + PAGES.notifications.href + '" aria-label="Notifications">' +
-              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9Z" stroke="#0B1220" stroke-width="2" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 0 1-3.4 0" stroke="#0B1220" stroke-width="2" stroke-linecap="round"/></svg>' +
-              (DUMMY_UNREAD_COUNT > 0 ? '<span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500"></span>' : '') +
-            '</button>' +
-
-            '<div class="relative">' +
-              '<button type="button" id="ce-shell-profile-btn" aria-haspopup="true" aria-expanded="false" class="ce-ghost-btn h-10 px-1.5 rounded-full border border-[var(--ce-border)] bg-white flex items-center gap-1">' +
-                '<span class="h-7 w-7 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[11px] font-bold">AS</span>' +
-                '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="#0B1220" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-              '</button>' +
-              '<div id="ce-shell-profile-menu" role="menu" aria-label="Profile menu" class="ce-shell-profile-menu absolute right-0 mt-2 w-48 rounded-xl border border-[var(--ce-border)] bg-white shadow-xl p-1.5 z-50">' +
-                '<button type="button" role="menuitem" class="w-full text-left px-3 py-2 rounded-lg text-[13.5px] font-medium text-[var(--ce-ink)] hover:bg-slate-50" data-ce-href="' + PAGES.profile.href + '">My Profile</button>' +
-                '<button type="button" role="menuitem" class="w-full text-left px-3 py-2 rounded-lg text-[13.5px] font-medium text-[var(--ce-ink)] hover:bg-slate-50" data-ce-href="' + PAGES.settings.href + '">Settings</button>' +
-                '<div class="h-px bg-[var(--ce-border)] my-1"></div>' +
-                '<button type="button" role="menuitem" class="w-full text-left px-3 py-2 rounded-lg text-[13.5px] font-semibold text-red-600 hover:bg-red-50" id="ce-shell-logout-btn">Log Out</button>' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-      '</header>'
-    );
-
-    mount.replaceWith(header);
-
-    /* Search: dummy — routes to My Complaints with the query preserved */
-    var searchInput = header.querySelector('#ce-shell-search');
-    if (searchInput) {
-      searchInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' && searchInput.value.trim()) {
-          navigate(PAGES['my-complaints'].href + '?search=' + encodeURIComponent(searchInput.value.trim()));
-        }
+  roleButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      selectedRole = btn.getAttribute('data-role');
+      roleButtons.forEach(function (b) {
+        var isActive = b === btn;
+        b.setAttribute('aria-pressed', String(isActive));
+        b.setAttribute('aria-checked', String(isActive));
       });
-    }
-
-    /* Profile dropdown */
-    var profileBtn = header.querySelector('#ce-shell-profile-btn');
-    var profileMenu = header.querySelector('#ce-shell-profile-menu');
-    function closeProfileMenu() {
-      profileMenu.classList.remove('is-open');
-      profileBtn.setAttribute('aria-expanded', 'false');
-    }
-    profileBtn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var isOpen = profileMenu.classList.toggle('is-open');
-      profileBtn.setAttribute('aria-expanded', String(isOpen));
+      roleLabelEl.textContent = ROLE_LABELS[selectedRole];
     });
-    document.addEventListener('click', function (e) {
-      if (!e.target.closest('#ce-shell-profile-menu') && !e.target.closest('#ce-shell-profile-btn')) closeProfileMenu();
-    });
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeProfileMenu();
-    });
-
-    /* Logout — no real session in this frontend-only build */
-    var logoutBtn = header.querySelector('#ce-shell-logout-btn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', function () {
-        // No auth/backend in this build — dummy action only.
-        closeProfileMenu();
-      });
-    }
-  }
-
-  /* ----------------------------------------------------------
-     5. SHARED SIDEBAR
-  ---------------------------------------------------------- */
-  function renderSidebar(activeKey, sidebarMode) {
-    var mount = document.getElementById('ce-shell-sidebar-mount');
-    if (!mount) return;
-
-    var navItemsHtml = SIDEBAR_ORDER.map(function (key) {
-      var page = PAGES[key];
-      var isActive = key === activeKey;
-      return '' +
-        '<button type="button" class="ce-shell-nav-item ce-rippleable w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13.5px] font-semibold text-[var(--ce-ink)] text-left" ' +
-        'data-ce-href="' + page.href + '"' + (isActive ? ' aria-current="page"' : '') + '>' +
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor">' + page.icon + '</svg>' +
-          page.label +
-        '</button>';
-    }).join('');
-
-    var isFloating = sidebarMode === 'floating';
-    var desktopClasses = isFloating ? '' : ' lg:static lg:z-auto lg:w-[220px] lg:shrink-0 lg:p-0 lg:sticky lg:top-6 lg:h-auto';
-    var floatingClass = isFloating ? ' ce-shell-sidebar--floating' : '';
-
-    var backdrop = el('<div id="ce-shell-sidebar-backdrop" class="ce-shell-sidebar-backdrop' + (isFloating ? '' : ' lg:hidden') + '"></div>');
-    var sidebar = el(
-      '<aside id="ce-shell-sidebar" class="ce-shell-sidebar' + floatingClass + ' fixed top-0 left-0 z-50 h-full w-[78%] max-w-xs overflow-y-auto bg-white p-4 flex flex-col gap-1.5' + desktopClasses + '" aria-label="Primary navigation">' +
-        '<div class="flex items-center justify-between mb-2' + (isFloating ? '' : ' lg:hidden') + '">' +
-          '<span class="text-[15px] font-extrabold tracking-tight text-[var(--ce-ink)]">Civic<span class="text-[var(--ce-emerald)]">Eye</span></span>' +
-          '<button type="button" id="ce-shell-sidebar-close" aria-label="Close menu" class="ce-ghost-btn h-9 w-9 rounded-full flex items-center justify-center border border-[var(--ce-border)]">' +
-            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6L18 18M18 6L6 18" stroke="#0B1220" stroke-width="2" stroke-linecap="round"/></svg>' +
-          '</button>' +
-        '</div>' +
-        '<div class="lg:rounded-2xl lg:border lg:border-[var(--ce-border)] lg:bg-white lg:p-2.5 flex flex-col gap-1">' +
-          navItemsHtml +
-        '</div>' +
-      '</aside>'
-    );
-
-    mount.replaceWith(sidebar);
-    document.body.appendChild(backdrop);
-
-    var toggleBtn = document.getElementById('ce-shell-sidebar-toggle');
-    var closeBtn = sidebar.querySelector('#ce-shell-sidebar-close');
-
-    function openSidebar() {
-      sidebar.classList.add('is-open');
-      backdrop.classList.add('is-open');
-      if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
-      document.body.style.overflow = 'hidden';
-      closeBtn.focus();
-    }
-    function closeSidebar() {
-      sidebar.classList.remove('is-open');
-      backdrop.classList.remove('is-open');
-      if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
-      document.body.style.overflow = '';
-      if (toggleBtn) toggleBtn.focus();
-    }
-    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
-    closeBtn.addEventListener('click', closeSidebar);
-    backdrop.addEventListener('click', closeSidebar);
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && sidebar.classList.contains('is-open')) closeSidebar();
-    });
-    window.addEventListener('resize', function () {
-      if (!isFloating && window.innerWidth >= 1024 && sidebar.classList.contains('is-open')) closeSidebar();
-    });
-
-    /* Close the mobile sidebar automatically when a nav item is chosen */
-    sidebar.addEventListener('click', function (e) {
-      if (e.target.closest('[data-ce-href]')) closeSidebar();
-    });
-  }
-
-  /* ----------------------------------------------------------
-     6. BREADCRUMB
-  ---------------------------------------------------------- */
-  function renderBreadcrumb(trail) {
-    var mount = document.getElementById('ce-shell-breadcrumb-mount');
-    if (!mount || !trail || !trail.length) return;
-
-    var html = trail.map(function (crumb, i) {
-      var isLast = i === trail.length - 1;
-      var sep = i > 0 ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="mx-1 shrink-0"><path d="M9 6l6 6-6 6" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
-      if (isLast || !crumb.href) {
-        return sep + '<span class="text-[12.5px] font-semibold text-[var(--ce-ink)]" aria-current="page">' + crumb.label + '</span>';
-      }
-      return sep + '<button type="button" class="text-[12.5px] font-medium text-[var(--ce-ink-soft)]" data-ce-href="' + crumb.href + '">' + crumb.label + '</button>';
-    }).join('');
-
-    var nav = el('<nav aria-label="Breadcrumb" class="ce-shell-breadcrumb flex items-center flex-wrap mb-4">' + html + '</nav>');
-    mount.replaceWith(nav);
-  }
-
-  /* ----------------------------------------------------------
-     7. GLOBAL NAVIGATION WIRING
-     Any element with data-ce-href routes through the shared
-     transition instead of a plain, jarring page-jump.
-  ---------------------------------------------------------- */
-  function wireNavigation() {
-    document.addEventListener('click', function (e) {
-      var trigger = e.target.closest('[data-ce-href]');
-      if (!trigger) return;
-      e.preventDefault();
-      navigate(trigger.getAttribute('data-ce-href'));
-    });
-  }
-
-  /* ----------------------------------------------------------
-     8. PUBLIC API
-  ---------------------------------------------------------- */
-  window.CivicEyeShell = {
-    PAGES: PAGES,
-    navigate: navigate,
-    init: function (config) {
-      config = config || {};
-      mountLoader();
-      renderHeader(config.activeKey, config.sidebarMode);
-      renderSidebar(config.activeKey, config.sidebarMode);
-      renderBreadcrumb(config.breadcrumb);
-      wireNavigation();
-
-      /* Pre-fill the shared search box if we arrived via a search link */
-      var params = new URLSearchParams(window.location.search);
-      var searchTerm = params.get('search');
-      var searchBox = document.getElementById('ce-shell-search');
-      if (searchTerm && searchBox) searchBox.value = searchTerm;
-
-      window.addEventListener('pageshow', hideLoader);
-      window.setTimeout(hideLoader, 60);
-    }
-  };
-})();
-
-</script>
-<script>
-  CivicEyeShell.init({
-    activeKey: 'dashboard',
-    breadcrumb: [{ label: 'Dashboard', href: null }]
   });
-</script>
 
-<!-- ============================================================
-     PAGE-SPECIFIC JAVASCRIPT — dummy activity timeline only
-============================================================= -->
-<script>
-(function () {
-  'use strict';
-
-  var ACTIVITY = [
-    { detail: 'Officer started work on CE-10231.', time: '1 hr ago' },
-    { detail: 'Water leakage (CE-10219) marked resolved.', time: 'Yesterday' },
-    { detail: 'Reported blocked drainage on Rajiv Nagar Main Road.', time: '3 days ago' }
-  ];
-
-  var timelineEl = document.getElementById('ce-activity-timeline');
-
-  function renderTimeline() {
-    var html = ACTIVITY.map(function (item, i) {
-      return '' +
-        '<div class="ce-timeline-item relative pl-8 pb-5 last:pb-0" role="listitem" style="transition-delay:' + (i * 100) + 'ms">' +
-          '<span class="absolute left-0 top-0 h-[26px] w-[26px] rounded-full flex items-center justify-center bg-[var(--ce-emerald)]">' +
-            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-          '</span>' +
-          '<p class="text-[13px] font-medium text-[var(--ce-ink)]">' + item.detail + '</p>' +
-          '<p class="text-[11.5px] text-slate-400 mt-0.5">' + item.time + '</p>' +
-        '</div>';
-    }).join('');
-    timelineEl.insertAdjacentHTML('beforeend', html);
-    requestAnimationFrame(function () {
-      timelineEl.querySelectorAll('.ce-timeline-item').forEach(function (el) { el.classList.add('is-visible'); });
-    });
+  /* ---------------- Ripple micro-interaction ---------------- */
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('.ce-rippleable');
+    if (!el) return;
+    var rect = el.getBoundingClientRect();
+    var size = Math.max(rect.width, rect.height);
+    var ripple = document.createElement('span');
+    ripple.className = 'ce-ripple';
+    ripple.style.position = 'absolute';
+    ripple.style.borderRadius = '9999px';
+    ripple.style.width = size + 'px';
+    ripple.style.height = size + 'px';
+    ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+    ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+    ripple.style.background = el.classList.contains('ce-ripple-light') ? 'rgba(255,255,255,0.5)' : 'rgba(11,18,32,0.12)';
+    ripple.style.transform = 'scale(0)';
+    ripple.style.pointerEvents = 'none';
+    ripple.style.animation = 'ce-ripple-anim 620ms ease-out';
+    if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+    el.style.overflow = 'hidden';
+    el.appendChild(ripple);
+    window.setTimeout(function () { ripple.remove(); }, 650);
+  });
+  if (!document.getElementById('ce-ripple-keyframes')) {
+    var styleTag = document.createElement('style');
+    styleTag.id = 'ce-ripple-keyframes';
+    styleTag.textContent = '@keyframes ce-ripple-anim { to { transform: scale(2.6); opacity: 0; } }';
+    document.head.appendChild(styleTag);
   }
 
-  renderTimeline();
+  /* ---------------- Show / hide password ---------------- */
+  var passwordInput = document.getElementById('ce-password');
+  var toggleBtn = document.getElementById('ce-toggle-password');
+  var eyeIcon = document.getElementById('ce-eye-icon');
+  toggleBtn.addEventListener('click', function () {
+    var isHidden = passwordInput.type === 'password';
+    passwordInput.type = isHidden ? 'text' : 'password';
+    toggleBtn.setAttribute('aria-pressed', String(isHidden));
+    toggleBtn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+    eyeIcon.innerHTML = isHidden
+      ? '<path d="M3 3l18 18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c4.5 0 8.3 2.5 10.5 7.3a12.6 12.6 0 0 1-3 3.9M6.6 6.6C4.4 8 2.8 10.2 1.5 12.3 3.7 17.1 7.5 19.6 12 19.6c1.4 0 2.7-.2 4-.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M9.9 10a3 3 0 0 0 4.1 4.1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>'
+      : '<path d="M1.5 12C3.7 7.2 7.5 4.7 12 4.7c4.5 0 8.3 2.5 10.5 7.3-2.2 4.8-6 7.3-10.5 7.3-4.5 0-8.3-2.5-10.5-7.3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>';
+  });
+
+  /* ---------------- Forgot password (dummy) ---------------- */
+  var forgotBtn = document.getElementById('ce-forgot-btn');
+  var forgotNote = document.getElementById('ce-forgot-note');
+  forgotBtn.addEventListener('click', function () {
+    forgotNote.style.opacity = '1';
+    window.setTimeout(function () { forgotNote.style.opacity = '0'; }, 3200);
+  });
+
+  /* ---------------- Form validation + dummy login flow ---------------- */
+  var form = document.getElementById('ce-login-form');
+  var emailInput = document.getElementById('ce-email');
+  var emailError = document.getElementById('ce-email-error');
+  var passwordError = document.getElementById('ce-password-error');
+  var loginBtn = document.getElementById('ce-login-btn');
+  var loginBtnLabel = document.getElementById('ce-login-btn-label');
+  var glassCard = document.querySelector('.ce-glass-card');
+
+  function isValidEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    var emailValid = isValidEmail(emailInput.value.trim());
+    var passwordValid = passwordInput.value.length >= 6;
+
+    emailError.classList.toggle('hidden', emailValid);
+    passwordError.classList.toggle('hidden', passwordValid);
+    emailInput.classList.toggle('border-red-400', !emailValid);
+    passwordInput.classList.toggle('border-red-400', !passwordValid);
+
+    if (!emailValid || !passwordValid) {
+      glassCard.classList.remove('ce-shake');
+      void glassCard.offsetWidth; // restart animation
+      glassCard.classList.add('ce-shake');
+      return;
+    }
+
+    // Frontend simulation only — no real authentication.
+    // Frontend simulation only — no real authentication.
+// Frontend simulation only — no real authentication.
+loginBtn.disabled = true;
+loginBtnLabel.innerHTML = '<span class="ce-btn-spinner"></span> Signing in…';
+
+// Check Remember Me checkbox
+var rememberMe = document.querySelector('.ce-checkbox').checked;
+
+console.log("Role before:", CivicEyeAuth.getRole());
+
+CivicEyeAuth.login(selectedRole, rememberMe);
+console.log(localStorage);
+
+console.log("Role after:", CivicEyeAuth.getRole());
+
+window.location.href = ROLE_REDIRECTS[selectedRole];
+  });
 })();
 </script>
+
 </body>
 </html>
