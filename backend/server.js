@@ -6,7 +6,9 @@ const cors = require("cors");
 const supabase = require("./config/supabase");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const complaintRoutes = require("./routes/complaintRoutes"); // NEW
 const authMiddleware = require("./middleware/authMiddleware");
+const officerRoutes = require("./routes/officerRoutes");
 
 const app = express();
 
@@ -22,9 +24,19 @@ app.get("/", (req, res) => {
   });
 });
 
-// Routes
+// =========================
+// ROUTES
+// =========================
+
+// Authentication Routes
 app.use("/api/auth", authRoutes);
+
+// User Routes
 app.use("/api/users", userRoutes);
+
+// Complaint Routes (NEW)
+app.use("/api/complaints", complaintRoutes);
+app.use("/api/officer", officerRoutes);
 
 // Protected Test Route
 app.get("/api/profile", authMiddleware, (req, res) => {
@@ -55,6 +67,7 @@ app.get("/api/test", async (req, res) => {
       message: "Supabase Connected",
       data,
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
